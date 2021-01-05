@@ -9,6 +9,10 @@ class Alexnet:
         self.labels = helper.read_labels('data/imagenet_classes.txt')
         self.model = models.alexnet(pretrained=True)
 
+    @classmethod
+    def info(cls):
+        return cls.name
+
     def classify_image_alexnet(self, img):
         transform = helper.get_input_transform()
         img_transformed = transform(img)

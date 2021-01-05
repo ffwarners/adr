@@ -14,6 +14,10 @@ class InceptionVThree:
         self.class_idx = None
         self.reader('data/imagenet_class_index.json')
 
+    @classmethod
+    def info(cls):
+        return cls.name
+
     def get_idx2label(self):
         return self.idx2label
 
