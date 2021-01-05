@@ -7,16 +7,16 @@ from torchvision import models
 class Alexnet:
     def __init__(self):
         self.labels = helper.read_labels('data/imagenet_classes.txt')
+        self.model = models.alexnet(pretrained=True)
 
     def classify_image_alexnet(self, img):
-        alexnet = models.alexnet(pretrained=True)
         transform = helper.get_input_transform()
-        img_t = transform(img)
-        batch_t = torch.unsqueeze(img_t, 0)
+        img_transformed = transform(img)
+        batch_t = torch.unsqueeze(img_transformed, 0)
 
-        alexnet.eval()
+        self.model.eval()
 
-        out = alexnet(batch_t)
+        out = self.model(batch_t)
 
         _, index = torch.max(out, 1)
 
