@@ -21,11 +21,10 @@ import torch.nn.functional as nn_functional
 # (2) take resized, cropped image and apply whitening.
 
 class XaiLime:
-    def __init__(self, model, images):
+    def __init__(self, model):
         self.model = model.model
-        self.images = images
 
-    def batch_predict(self):
+    def batch_predict(self, images):
         # Now we are ready to define classification function that Lime needs.
         # The input to this function is numpy array of images where each image is ndarray of shape
         # (channel, height, width).
@@ -33,7 +32,7 @@ class XaiLime:
         # that image, class combination.
         self.model.eval()
         preprocess_transform = helper.get_preprocess_transform()
-        batch = torch.stack(tuple(preprocess_transform(i) for i in self.images), dim=0)
+        batch = torch.stack(tuple(preprocess_transform(i) for i in images), dim=0)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(device)
         batch = batch.to(device)
@@ -41,10 +40,24 @@ class XaiLime:
         probs = nn_functional.softmax(logits, dim=1)
         return probs.detach().cpu().numpy()
 
-    def test_function(self):
+    def test_function(self, images):
         pill_transformed = helper.get_pil_transform()
-        test_pred = self.batch_predict()
+        test_pred = self.batch_predict(images)
         return test_pred.squeeze().argmax()
+
+    def explain(self, image):
+        explainer = lime_image.LimeImageExplainer()
+        pill_transformed = helper.get_pil_transform()
+        explanation = explainer.explain_instance(np.array(pill_transformed(image)),
+                                                 self.batch_predict,  # classification function
+                                                 top_labels=5,
+                                                 hide_color=0,
+                                                 num_samples=1000)  # number of images that will be sent to classification function
+        temp, mask = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=False, num_features=10,
+                                                    hide_rest=False)
+        img_boundary = mark_boundaries(temp / 255.0, mask)
+        plt.imshow(img_boundary)
+        plt.show()
 
 
 
@@ -61,20 +74,3 @@ class XaiLime:
 #
 #
 
-# explainer = lime_image.LimeImageExplainer()
-#
-# explanation = explainer.explain_instance(np.array(pill_transformed(img)),
-#                                          inception.batch_predict, # classification function
-#                                          top_labels=5,
-#                                          hide_color=0,
-#                                          num_samples=1000) # number of images that will be sent to classification function
-#
-# temp, mask = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=True, num_features=5, hide_rest=False)
-# img_boundry1 = mark_boundaries(temp/255.0, mask)
-# plt.imshow(img_boundry1)
-# plt.show()
-#
-# temp, mask = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=False, num_features=10, hide_rest=False)
-# img_boundry2 = mark_boundaries(temp/255.0, mask)
-# plt.imshow(img_boundry2)
-# plt.show()

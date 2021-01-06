@@ -21,8 +21,8 @@ def main():
     #
     # alex = alexnet.Alexnet()
     # alex.classify_image_alexnet(img)
-    lime = lime_model.XaiLime(inception, [img])
-    print(lime.test_function())
+    lime = lime_model.XaiLime(inception)
+    lime.explain(img)
 
 
 
